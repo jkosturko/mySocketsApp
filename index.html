@@ -1,0 +1,76 @@
+<html>
+<head>
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.1.1/css/bootstrap.min.css">
+<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+  var socket = io.connect('http://localhost');
+  socket.on('news', function (data) {
+    console.log(data);
+    socket.emit('my other event', { my: 'data' });
+  });
+
+  socket.on('sendMessage', function (data) {
+  	console.log(data.inputText);
+  	$(".output").append(data.inputText + "</br>");
+  })
+
+  socket.on('broadcastCircles', function (data) {
+  	console.log('client data circles', data)
+  	createCircle(data.x, data.y, data.color);
+  });
+
+ $(function () {
+
+ 	  var dataObj = {};
+	 $(".submitButton").click(function() {
+
+	 	//Hey Server: A button was clicked!
+	 	dataObj.inputText = $(".inputText").val();
+		socket.emit('buttonClicked', dataObj);
+	  });
+
+
+	$("#myCanvas").click(function(e) {
+		var triggerPosition = getClickPosition($(this),e);
+		var circle = createCircle(triggerPosition.x, triggerPosition.y);
+		socket.emit('circleCreated', circle);
+	});
+ });
+
+function getClickPosition(target,e) {
+	var posX = target.offset().left, posY = target.offset().top;
+	return {'x':(e.pageX - posX),'y':(e.pageY - posY)};
+}
+
+ function createCircle(x, y, color) {
+ 	var c=document.getElementById("myCanvas");
+	var ctx=c.getContext("2d");
+	var myColor = (color)?color:randomColorHex();
+	ctx.beginPath(x, y);
+	ctx.fillStyle=myColor
+	ctx.arc(x,y,40,0,2*Math.PI);
+	ctx.stroke();
+	ctx.closePath();
+	ctx.fill();
+	return {'x':x, 'y':y, "color": myColor}
+ }
+
+ function randomColorHex() {
+	return '#'+Math.floor(Math.random()*16777215).toString(16);
+ }
+
+</script>
+</head>
+<body>
+	<form >
+		<input class="inputText" type="text" value=""> <button class="submitButton btn btn-primary" type="button">Send</button>
+	</form>
+	<p class="output"></p>
+	<canvas id="myCanvas" width="400" height="400"
+		style="border:1px solid #000000;">
+	</canvas>
+
+</body>
+</html>
